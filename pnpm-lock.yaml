@@ -12,7 +12,7 @@ importers:
         specifier: ^2.0.3
         version: 2.3.1(astro@4.16.18(rollup@4.46.2)(typescript@5.9.2))
       '@astrojs/node':
-        specifier: ^8.3.4
+        specifier: '8'
         version: 8.3.4(astro@4.16.18(rollup@4.46.2)(typescript@5.9.2))
       '@astrojs/rss':
         specifier: ^3.0.0
