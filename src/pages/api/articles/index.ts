@@ -1,13 +1,15 @@
-
 import type { APIRoute } from 'astro';
 import fs from 'fs/promises';
 import path from 'path';
+import matter from 'gray-matter';
+
+export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
   try {
     const data = await request.json();
     const { title, description, tags, heroImage, badge, content } = data;
-    
+
     if (!title || !description || !content) {
       return new Response(JSON.stringify({ message: 'Title, description, and content are required' }), {
         status: 400,
@@ -36,7 +38,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     const fileContent = frontmatter + content;
     const filePath = path.join(process.cwd(), 'src', 'content', 'blog', `${slug}.md`);
-    
+
     // Check if file already exists
     try {
       await fs.access(filePath);

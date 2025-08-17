@@ -4,6 +4,8 @@ import fs from 'fs/promises';
 import path from 'path';
 import matter from 'gray-matter';
 
+export const prerender = false;
+
 export const GET: APIRoute = async ({ params }) => {
   try {
     const { slug } = params;
