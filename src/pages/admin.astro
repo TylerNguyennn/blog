@@ -3,215 +3,270 @@
 import BaseLayout from "@layouts/BaseLayout.astro";
 import { getCollection } from "astro:content";
 
-const allPosts = await getCollection("blog");
+const articles = await getCollection("blog");
 ---
 
-<BaseLayout title="Admin - Manage Articles" sideBarActiveItemID="admin">
+<BaseLayout title="Admin - Article Management" sideBarActiveItemID="admin">
   <div class="pb-12 mt-5">
     <div class="text-xl py-1">Article Management</div>
-    <div class="text-5xl font-bold">Admin Dashboard</div>
+    <div class="text-5xl font-bold">Admin Panel</div>
     <div class="py-2">
       <text class="text-lg">
-        Manage your blog articles - create, edit, and delete posts.
+        Create, edit, and manage your blog articles
       </text>
     </div>
-  </div>
 
-  <div class="mb-6">
-    <button id="create-new-btn" class="btn btn-primary">
-      Create New Article
-    </button>
-  </div>
-
-  <!-- Articles List -->
-  <div class="space-y-4">
-    {allPosts.map((post) => (
-      <div class="card bg-base-100 shadow-md">
+    <!-- Article Form -->
+    <div class="mt-8">
+      <div class="card bg-base-100 shadow-xl">
         <div class="card-body">
-          <div class="flex justify-between items-start">
-            <div>
-              <h3 class="card-title">{post.data.title}</h3>
-              <p class="text-gray-600">{post.data.description}</p>
-              <p class="text-sm text-gray-500">
-                Published: {post.data.pubDate.toLocaleDateString()}
-              </p>
-              {post.data.tags && (
-                <div class="flex flex-wrap gap-1 mt-2">
-                  {post.data.tags.map((tag) => (
-                    <span class="badge badge-outline badge-sm">{tag}</span>
-                  ))}
+          <h2 class="card-title">Create/Edit Article</h2>
+          <form id="articleForm">
+            <input type="hidden" id="editingSlug" />
+            
+            <div class="form-control mb-4">
+              <label class="label">
+                <span class="label-text">Title</span>
+              </label>
+              <input type="text" id="title" class="input input-bordered" required />
+            </div>
+
+            <div class="form-control mb-4">
+              <label class="label">
+                <span class="label-text">Description</span>
+              </label>
+              <textarea id="description" class="textarea textarea-bordered" required></textarea>
+            </div>
+
+            <div class="form-control mb-4">
+              <label class="label">
+                <span class="label-text">Hero Image</span>
+              </label>
+              <div class="flex gap-2">
+                <input type="file" id="imageFile" class="file-input file-input-bordered flex-1" accept="image/*" />
+                <button type="button" id="uploadImageBtn" class="btn btn-secondary">Upload</button>
+              </div>
+              <input type="text" id="heroImage" class="input input-bordered mt-2" placeholder="Image URL" />
+            </div>
+
+            <div class="form-control mb-4">
+              <label class="label">
+                <span class="label-text">Tags (comma-separated)</span>
+              </label>
+              <input type="text" id="tags" class="input input-bordered" placeholder="astro, web, coding" />
+            </div>
+
+            <div class="form-control mb-4">
+              <label class="label">
+                <span class="label-text">Badge</span>
+              </label>
+              <input type="text" id="badge" class="input input-bordered" placeholder="Featured, New, etc." />
+            </div>
+
+            <div class="form-control mb-4">
+              <label class="label">
+                <span class="label-text">Content (Markdown)</span>
+              </label>
+              <div class="relative">
+                <textarea id="content" class="textarea textarea-bordered h-64 font-mono" required placeholder="Write your markdown content here..."></textarea>
+                <div class="absolute top-2 right-2 flex gap-1">
+                  <button type="button" class="btn btn-xs" onclick="insertMarkdown('**', '**')">Bold</button>
+                  <button type="button" class="btn btn-xs" onclick="insertMarkdown('*', '*')">Italic</button>
+                  <button type="button" class="btn btn-xs" onclick="insertMarkdown('`', '`')">Code</button>
+                  <button type="button" class="btn btn-xs" onclick="insertMarkdown('## ', '')">H2</button>
+                  <button type="button" class="btn btn-xs" onclick="insertMarkdown('[', '](url)')">Link</button>
                 </div>
-              )}
+              </div>
             </div>
-            <div class="flex gap-2">
-              <button class="btn btn-sm btn-outline edit-btn" data-slug={post.slug}>
-                Edit
-              </button>
-              <button class="btn btn-sm btn-error delete-btn" data-slug={post.slug}>
-                Delete
-              </button>
+
+            <div class="card-actions justify-end">
+              <button type="button" id="cancelBtn" class="btn btn-outline" style="display: none;">Cancel</button>
+              <button type="submit" id="submitBtn" class="btn btn-primary">Create Article</button>
             </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Articles List -->
+    <div class="mt-8">
+      <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+          <h2 class="card-title">Existing Articles</h2>
+          <div class="overflow-x-auto">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Date</th>
+                  <th>Tags</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="articlesTable">
+                {articles.map((article) => (
+                  <tr>
+                    <td>{article.data.title}</td>
+                    <td>{article.data.pubDate.toLocaleDateString()}</td>
+                    <td>
+                      {article.data.tags?.map(tag => (
+                        <span class="badge badge-outline mr-1">{tag}</span>
+                      ))}
+                    </td>
+                    <td>
+                      <button class="btn btn-sm btn-outline mr-2" onclick={`editArticle('${article.slug}')`}>
+                        Edit
+                      </button>
+                      <button class="btn btn-sm btn-error" onclick={`deleteArticle('${article.slug}')`}>
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
-    ))}
+    </div>
   </div>
 
-  <!-- Modal for Create/Edit -->
-  <dialog id="article-modal" class="modal">
-    <div class="modal-box w-11/12 max-w-4xl">
-      <h3 id="modal-title" class="font-bold text-lg">Create New Article</h3>
-      <form id="article-form" class="space-y-4 mt-4">
-        <input type="hidden" id="article-slug" />
-        
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Title</span>
-          </label>
-          <input type="text" id="article-title" class="input input-bordered" required />
-        </div>
-
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Description</span>
-          </label>
-          <textarea id="article-description" class="textarea textarea-bordered" required></textarea>
-        </div>
-
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Tags (comma separated)</span>
-          </label>
-          <input type="text" id="article-tags" class="input input-bordered" placeholder="tag1, tag2, tag3" />
-        </div>
-
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Hero Image URL (optional)</span>
-          </label>
-          <input type="url" id="article-hero-image" class="input input-bordered" />
-        </div>
-
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Badge (optional)</span>
-          </label>
-          <input type="text" id="article-badge" class="input input-bordered" />
-        </div>
-
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Content</span>
-          </label>
-          <textarea id="article-content" class="textarea textarea-bordered h-64" required placeholder="Write your article content in Markdown..."></textarea>
-        </div>
-
-        <div class="modal-action">
-          <button type="button" class="btn" onclick="document.getElementById('article-modal').close()">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Article</button>
-        </div>
-      </form>
-    </div>
-  </dialog>
-
   <script>
-    const modal = document.getElementById('article-modal');
-    const form = document.getElementById('article-form');
-    const modalTitle = document.getElementById('modal-title');
-    
-    // Create new article
-    document.getElementById('create-new-btn').addEventListener('click', () => {
-      modalTitle.textContent = 'Create New Article';
-      form.reset();
-      document.getElementById('article-slug').value = '';
-      modal.showModal();
+    let isEditing = false;
+
+    // Image upload functionality
+    document.getElementById('uploadImageBtn').addEventListener('click', async () => {
+      const fileInput = document.getElementById('imageFile');
+      const file = fileInput.files[0];
+      
+      if (!file) {
+        alert('Please select an image file');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+        
+        if (response.ok) {
+          document.getElementById('heroImage').value = result.imageUrl;
+          alert('Image uploaded successfully!');
+        } else {
+          alert('Upload failed: ' + result.message);
+        }
+      } catch (error) {
+        alert('Upload error: ' + error.message);
+      }
+    });
+
+    // Markdown insertion helpers
+    window.insertMarkdown = (before, after) => {
+      const textarea = document.getElementById('content');
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selectedText = textarea.value.substring(start, end);
+      const newText = before + selectedText + after;
+      
+      textarea.value = textarea.value.substring(0, start) + newText + textarea.value.substring(end);
+      textarea.focus();
+      textarea.setSelectionRange(start + before.length, start + before.length + selectedText.length);
+    };
+
+    // Form submission
+    document.getElementById('articleForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = {
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        heroImage: document.getElementById('heroImage').value,
+        tags: document.getElementById('tags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
+        badge: document.getElementById('badge').value,
+        content: document.getElementById('content').value
+      };
+
+      const url = isEditing ? `/api/articles/${document.getElementById('editingSlug').value}` : '/api/articles';
+      const method = isEditing ? 'PUT' : 'POST';
+
+      try {
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+        
+        if (response.ok) {
+          alert(isEditing ? 'Article updated successfully!' : 'Article created successfully!');
+          location.reload();
+        } else {
+          alert('Error: ' + result.message);
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
     });
 
     // Edit article
-    document.querySelectorAll('.edit-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const slug = btn.dataset.slug;
-        modalTitle.textContent = 'Edit Article';
+    window.editArticle = async (slug) => {
+      try {
+        const response = await fetch(`/api/articles/${slug}`);
+        const article = await response.json();
         
-        try {
-          const response = await fetch(`/api/articles/${slug}`);
-          const article = await response.json();
-          
-          document.getElementById('article-slug').value = slug;
-          document.getElementById('article-title').value = article.title;
-          document.getElementById('article-description').value = article.description;
-          document.getElementById('article-tags').value = article.tags ? article.tags.join(', ') : '';
-          document.getElementById('article-hero-image').value = article.heroImage || '';
-          document.getElementById('article-badge').value = article.badge || '';
-          document.getElementById('article-content').value = article.content;
-          
-          modal.showModal();
-        } catch (error) {
-          alert('Error loading article: ' + error.message);
-        }
-      });
+        document.getElementById('editingSlug').value = slug;
+        document.getElementById('title').value = article.title;
+        document.getElementById('description').value = article.description;
+        document.getElementById('heroImage').value = article.heroImage || '';
+        document.getElementById('tags').value = article.tags ? article.tags.join(', ') : '';
+        document.getElementById('badge').value = article.badge || '';
+        document.getElementById('content').value = article.content;
+        
+        document.getElementById('submitBtn').textContent = 'Update Article';
+        document.getElementById('cancelBtn').style.display = 'inline-block';
+        isEditing = true;
+        
+        document.getElementById('articleForm').scrollIntoView();
+      } catch (error) {
+        alert('Error loading article: ' + error.message);
+      }
+    };
+
+    // Cancel editing
+    document.getElementById('cancelBtn').addEventListener('click', () => {
+      document.getElementById('articleForm').reset();
+      document.getElementById('editingSlug').value = '';
+      document.getElementById('submitBtn').textContent = 'Create Article';
+      document.getElementById('cancelBtn').style.display = 'none';
+      isEditing = false;
     });
 
     // Delete article
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const slug = btn.dataset.slug;
-        
-        if (confirm('Are you sure you want to delete this article?')) {
-          try {
-            const response = await fetch(`/api/articles/${slug}`, {
-              method: 'DELETE'
-            });
-            
-            if (response.ok) {
-              location.reload();
-            } else {
-              alert('Error deleting article');
-            }
-          } catch (error) {
-            alert('Error deleting article: ' + error.message);
-          }
-        }
-      });
-    });
-
-    // Save article
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    window.deleteArticle = async (slug) => {
+      if (!confirm('Are you sure you want to delete this article?')) return;
       
-      const slug = document.getElementById('article-slug').value;
-      const isEdit = !!slug;
-      
-      const articleData = {
-        title: document.getElementById('article-title').value,
-        description: document.getElementById('article-description').value,
-        tags: document.getElementById('article-tags').value.split(',').map(t => t.trim()).filter(t => t),
-        heroImage: document.getElementById('article-hero-image').value,
-        badge: document.getElementById('article-badge').value,
-        content: document.getElementById('article-content').value
-      };
-
       try {
-        const url = isEdit ? `/api/articles/${slug}` : '/api/articles';
-        const method = isEdit ? 'PUT' : 'POST';
-        
-        const response = await fetch(url, {
-          method,
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(articleData)
+        const response = await fetch(`/api/articles/${slug}`, {
+          method: 'DELETE'
         });
-
+        
         if (response.ok) {
+          alert('Article deleted successfully!');
           location.reload();
         } else {
-          const error = await response.json();
-          alert('Error saving article: ' + error.message);
+          const result = await response.json();
+          alert('Error: ' + result.message);
         }
       } catch (error) {
-        alert('Error saving article: ' + error.message);
+        alert('Error: ' + error.message);
       }
-    });
+    };
   </script>
 </BaseLayout>
